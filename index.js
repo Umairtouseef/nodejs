@@ -11,15 +11,22 @@ app.get('/', (req, res) => {
 // Scraping route
 app.get('/scrape', async (req, res) => {
     try {
+
+        const { cid } = req.query; 
+        console.log("cid",cid)
+        if (!cid) {
+            return res.status(400).json({ error: "CID parameter is required" });
+        }
+
         const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] });
         const page = await browser.newPage();
         
-        await page.goto('https://maps.google.com/?cid=6140691952107703956', { waitUntil: 'networkidle2' });
+        await page.goto(cid, { waitUntil: 'networkidle2' });
 
-        // Wait for the button to appear
+       
         await page.waitForSelector("button.DkEaL", { timeout: 10000 });
 
-        // Extract category
+       
         const category = await page.evaluate(() => {
             let categoryElement = document.querySelector("button.DkEaL");
             return categoryElement ? categoryElement.innerText : "Category not found!";
@@ -27,7 +34,7 @@ app.get('/scrape', async (req, res) => {
 
         await browser.close();
 
-        res.json({ category }); // Send response as JSON
+        res.json({ categories: [category] }); 
 
     } catch (error) {
         console.error("Error:", error);
